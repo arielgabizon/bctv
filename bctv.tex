@@ -1,0 +1,407 @@
+\def\notes{1}
+\documentclass[11pt]{article}
+%\usepackage[T1]{fontenc}
+%\usepackage[letterpaper]{geometry}
+%\geometry{verbose,tmargin=3cm,bmargin=3cm,lmargin=3cm,rmargin=3cm}
+%\usepackage{verbatim}
+\usepackage{amsfonts,amsmath,amssymb,amsthm}
+%\usepackage{setspace}
+\usepackage{xspace}%,enumitem}
+%\usepackage{times}
+\usepackage{fullpage}
+%\usepackage{hyperref}
+%\doublespacing
+\usepackage{color}
+\usepackage{numdef}
+\usepackage{enumitem}
+\usepackage{amsopn}
+%\usepackage{hyperref} 
+
+\providecommand{\sqbinom}{\genfrac{\lbrack}{\rbrack}{0pt}{}}
+\DeclareMathOperator{\spn}{span}
+
+\newif\ifdraft
+%\drafttrue
+\draftfalse
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Textclass specific LaTeX commands.
+\numberwithin{equation}{section} %% Comment out for sequentially-numbered
+\numberwithin{figure}{section} %% Comment out for sequentially-numbered
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{conjecture}[thm]{Conjecture}
+\newtheorem{definition}[thm]{Definition}
+\newtheorem{dfn}[thm]{Definition}
+\newtheorem{lemma}[thm]{Lemma}
+\newtheorem{remark}[thm]{Remark}
+\newtheorem{proposition}[thm]{Proposition}
+\newtheorem{corollary}[thm]{Corollary}
+\newtheorem{claim}[thm]{Claim}
+\newtheorem{fact}[thm]{Fact}
+\newtheorem{openprob}[thm]{Open Problem}
+\newtheorem{remk}[thm]{Remark}
+\newtheorem{example}[thm]{Example}
+\newtheorem{apdxlemma}{Lemma}
+\newcommand{\question}[1]{{\sf [#1]\marginpar{?}} }
+%\usepackage{babel}
+\usepackage{tikz}
+
+\makeatletter
+\newcommand*{\circled}{\@ifstar\circledstar\circlednostar}
+\makeatother
+
+\newcommand*\circledstar[1]{%
+  \tikz[baseline=(C.base)]
+    \node[%
+      fill,
+      circle,
+      minimum size=1.35em,
+      text=white,
+      font=\sffamily,
+      inner sep=0.5pt
+    ](C) {#1};%
+}
+\newcommand*\circlednostar[1]{%
+  \tikz[baseline=(C.base)]
+    \node[%
+      draw,
+      circle,
+      minimum size=1.35em,
+      font=\sffamily,
+      inner sep=0.5pt
+    ](C) {#1};%
+}
+
+\providecommand{\bd}[1]{\circled{#1}}
+
+
+%Eli's macros
+\newcommand{\E}{{\mathbb{E}}}
+%\newcommand{\N}{{\mathbb{N}}}
+\newcommand{\R}{{\mathbb{R}}}
+\newcommand{\calF}{{\cal{F}}}
+%\newcommand{\inp}[1]{\langle{#1}\rangle}
+\newcommand{\disp}[1]{D_{#1}}
+%\newcommand{\spn}[1]{{\rm{span}}\left(#1\right)}
+%\newcommand{\supp}{{\rm{supp}}}
+\newcommand{\agree}{{\sf{agree}}}
+\newcommand{\RS}{{\sf{RS}}}
+\newcommand{\aRS}{{\sf{aRS}}}
+\newcommand{\rrs}{R_{\aRS}}
+\newcommand{\VRS}{V_\RS}
+\newcommand{\set}[1]{\ensuremath{\left\{#1\right\}}\xspace}
+\newcommand{\angles}[1]{\langle{#1}\rangle}
+\newcommand{\condset}[2]{\set{#1 \mid #2 }}
+\newcommand{\zo}{\set{0,1}}
+\newcommand{\zon}{{\zo^n}}
+\newcommand{\zom}{{\zo^m}}
+\newcommand{\zok}{{\zo^}}
+\newcommand{\eps}{\epsilon}
+\newcommand{\e}{\eps}
+%\newcommand{\d}{\delta}
+\newcommand{\poly}{{\rm{poly}}}
+\newcommand{\itone}{{\it{(i)}}\xspace}
+\newcommand{\ittwo}{{\it{(ii)}}\xspace}
+\newcommand{\itthree}{{\it{(iii)}}\xspace}
+\newcommand{\itfour}{{\it{(iv)}}\xspace}
+\newcommand{\cc}{{\rm{CC}}}
+\newcommand{\rnk}{{\rm{rank}}}
+\newcommand{\T}{T}
+\newcommand{\I}{{\mathbb{I}}}
+\ifdraft
+\newcommand{\ariel}[1]{{\color{blue}{\textit{#1 --- ariel gabizon}}}}
+\else
+\newcommand{\ariel}[1]{}
+\fi
+\providecommand{\improvement}[1]{{\color{red} \textbf{#1}}}
+\title{%
+On the security of the BCTV Pinocchio zk-SNARK variant}
+\date{\today}
+\author{Ariel Gabizon}
+\date{Zcash }
+\begin{document}
+\maketitle
+ \mathchardef\mhyphen="2D
+
+\num\newcommand{\G1}{\ensuremath{{\mathbb G}_1}\xspace}
+\num\newcommand{\G2}{\ensuremath{{\mathbb G}_2}\xspace}
+\num\newcommand{\G11}{\ensuremath{\G1\setminus \set{0} }\xspace}
+\num\newcommand{\G21}{\ensuremath{\G2\setminus \set{0} }\xspace}
+\newcommand{\grouppair}{\ensuremath{G^*}\xspace}
+
+\newcommand{\Gt}{\ensuremath{{\mathbb G}_t}\xspace}
+\newcommand{\F}{\ensuremath{\mathbb F}\xspace}
+\newcommand{\help}[1]{$#1$-helper\xspace}
+\newcommand{\randompair}[1]{\ensuremath{\mathsf{randomPair}(#1)}\xspace}
+\newcommand{\pair}[1]{$#1$-pair\xspace}
+\newcommand{\pairs}[1]{$#1$-pairs\xspace}
+
+\newcommand{\pairone}[1]{\G1-$#1$-pair\xspace}
+\newcommand{\pairtwo}[1]{\G2-$#1$-pair\xspace}
+\newcommand{\sameratio}[2]{\ensuremath{\mathsf{SameRatio}(#1,#2)}\xspace}
+\newcommand{\vecc}[2]{\ensuremath{(#1)_{#2}}\xspace}
+\newcommand{\players}{\ensuremath{[n]}\xspace}
+\newcommand{\adv}{\ensuremath{A}\xspace}
+\newcommand{\ci}{\ensuremath{\mathrm{CI}}\xspace}
+\newcommand{\pairvec}[1]{$#1$-vector\xspace}
+\newcommand{\Fq}{\ensuremath{\mathbb{F}_q}\xspace}
+\newcommand{\randpair}[1]{\ensuremath{\mathsf{rp}_{#1}}\xspace}
+\newcommand{\randpairone}[1]{\ensuremath{\mathsf{rp}_{#1}^{1}}\xspace}
+
+\newcommand{\randpairtwo}[1]{\ensuremath{\mathsf{rp_{#1}^2}}\xspace}%the randpair in G2
+
+\newcommand{\rej}{\ensuremath{\mathsf{rej}}\xspace}
+\newcommand{\acc}{\ensuremath{\mathsf{acc}}\xspace}
+\newcommand{\sha}[1]{\ensuremath{\mathsf{COMMIT}(#1)}\xspace}
+ \newcommand{\shaa}{\ensuremath{\mathsf{COMMIT}}\xspace}
+ \newcommand{\comm}[1]{\ensuremath{\mathsf{comm}_{#1}}\xspace}
+ \newcommand{\defeq}{:=}
+
+\newcommand{\A}{\ensuremath{\vec{A}}\xspace}
+\newcommand{\B}{\ensuremath{\vec{B}}\xspace}
+\newcommand{\C}{\ensuremath{\vec{C}}\xspace}
+\newcommand{\Btwo}{\ensuremath{\vec{B_2}}\xspace}
+\newcommand{\treevecsimp}{\ensuremath{(\tau,\rho_A,\rho_A \rho_B,\rho_A\alpha_A,\rho_A\rho_B\alpha_B, \rho_A\rho_B\alpha_C,\beta,\beta\gamma)}\xspace}% The sets of elements used in simplifed relation tree in main text body
+\newcommand{\rcptc}{random-coefficient subprotocol\xspace}
+\newcommand{\rcptcparams}[2]{\ensuremath{\mathrm{RCPC}(#1,#2)}\xspace}
+\newcommand{\verifyrcptcparams}[2]{\ensuremath{\mathrm{\mathsf{verify}RCPC}(#1,#2)}\xspace}
+
+ \num\newcommand{\ex1}[1]{\ensuremath{ #1\cdot g_1}\xspace}
+ \num\newcommand{\ex2}[1]{\ensuremath{#1\cdot g_2}\xspace}
+ \newcommand{\pr}{\mathrm{Pr}}
+ \newcommand{\powervec}[2]{\ensuremath{(1,#1,#1^{2},\ldots,#1^{#2})}\xspace}
+\num\newcommand{\out1}[1]{\ensuremath{\ex1{\powervec{#1}{d}}}\xspace}
+\num\newcommand{\out2}[1]{\ensuremath{\ex2{\powervec{#1}{d}}}\xspace}
+ \newcommand{\nizk}[2]{\ensuremath{\mathrm{NIZK}(#1,#2)}\xspace}% #2 is the hash concatenation input
+ \newcommand{\verifynizk}[3]{\ensuremath{\mathrm{VERIFY\mhyphen NIZK}(#1,#2,#3)}\xspace}
+\newcommand{\protver}{protocol verifier\xspace} 
+\newcommand{\mulgroup}{\ensuremath{\F^*}\xspace}
+\newcommand{\lag}[1]{\ensuremath{L_{#1}}\xspace} 
+\newcommand{\sett}[2]{\ensuremath{\set{#1}_{#2}}\xspace}
+\newcommand{\omegaprod}{\ensuremath{\alpha_{\omega}}\xspace}
+\newcommand{\lagvec}[1]{\ensuremath{\mathrm{LAG}_{#1}}\xspace}
+
+\num\newcommand{\enc1}[1]{\ensuremath{\left[#1\right]_1}\xspace}
+\num\newcommand{\enc2}[1]{\ensuremath{\left[#1\right]_2}\xspace}
+
+\num\newcommand{\G0}{\ensuremath{\mathbf{G}}\xspace}
+\newcommand{\GG}{\ensuremath{\mathbf{G^*}}\xspace}  % would have liked to call this G01 but problem with name
+\num\newcommand{\g0}{\ensuremath{\mathbf{g}}\xspace}
+\newcommand{\inst}{\ensuremath{\phi}\xspace}
+\newcommand{\inp}{\ensuremath{x}\xspace}
+\newcommand{\wit}{\ensuremath{\omega}\xspace}
+\newcommand{\ver}{\ensuremath{\mathsf{V}}\xspace}
+\newcommand{\per}{\ensuremath{\mathsf{P}}\xspace}
+
+\newcommand{\prf}{\ensuremath{\pi}\xspace}
+\newcommand{\ext}{\ensuremath{E}\xspace}
+\newcommand{\params}{\ensuremath{\mathsf{params}_{\inst}}\xspace}
+\newcommand{\protparams}{\ensuremath{\mathsf{params}_{\inst}^\advv}\xspace}
+\num\newcommand{\p1}{\ensuremath{P_1}\xspace}
+\newcommand{\advv}{\ensuremath{B}\xspace} % the adversary that uses protocol adversary as black box
+\renewcommand{\sim}{\ensuremath{\mathsf{sim}}\xspace}%the distribution of messages when \advv simulates message of \p1
+\newcommand{\real}{\ensuremath{\mathsf{real}}\xspace}%the distribution of messages when \p1 is honest and \adv controls rest of players
+ \newcommand{\koevec}[2]{\ensuremath{(1,#1,\ldots,#1^{#2},\alpha,\alpha #1,\ldots,\alpha #1^{#2})}\xspace}
+\newcommand{\mida}{\ensuremath{A_{\mathrm{mid}}}\xspace}
+\newcommand{\midb}{\ensuremath{B_{\mathrm{mid}}}\xspace}
+\newcommand{\midc}{\ensuremath{C_{\mathrm{mid}}}\xspace}
+\newcommand{\chal}{\ensuremath{\mathsf{challenge}}\xspace}
+\newcommand{\attackparams}{\ensuremath{\mathsf{params^{pin}}}\xspace}
+\newcommand{\pk}{\ensuremath{\mathsf{pk}}\xspace}
+\newcommand{\attackdist}[2]{\ensuremath{AD_{#1}}\xspace}
+\renewcommand{\neg}{\ensuremath{\mathsf{negl}(\log r)}\xspace}
+\newcommand{\ro}{\ensuremath{{\mathcal R}}\xspace}
+\newcommand{\elements}[1]{\ensuremath{\mathsf{elements}_{#1}}\xspace}
+ \num\newcommand{\elmpowers1}[1]{\ensuremath{\mathrm{\mathsf{e}}^1_{#1}}\xspace}
+ \num\newcommand{\elmpowers2}[1]{\ensuremath{\mathrm{\mathsf{e}}^2_{#1}}\xspace}
+\newcommand{\elempowrs}[1]{\ensuremath{\mathsf{e}_{#1}}\xspace}
+ \newcommand{\secrets}{\ensuremath{\mathsf{secrets}}\xspace}
+ \newcommand{\polysofdeg}[1]{\ensuremath{\F_{< #1}[X]}\xspace}
+\newcommand{\bctv}{\ensuremath{\mathsf{BCTV}}\xspace}
+\newcommand{\PI}{\ensuremath{\mathsf{PI}}\xspace}
+\newcommand{\dl}[1]{\ensuremath{\widehat{#1}}\xspace}
+\begin{abstract}
+The main result of this note is a severe flaw in the description of the zk-SNARK of \cite{BCTV}.
+The flaw stems from including redundant elements in the CRS as compared to that of the original Pinocchio protocol \cite{PGHR} that it is vital not to expose.
+The flaw enables creating a proof of knowledge for *any* public input given a valid proof for *some* public input.
+We also provide a proof of security for the \cite{BCTV} zk-SNARK in the generic group model, when these elements are excluded from the CRS, provided a certain linear algebraic condition is satisfied by the QAP polynomials.
+\end{abstract}
+
+\section{Introduction}
+
+Parno et. al \cite{PGHR} presented a zk-SNARK construction based on the breakthrough work of \cite{GGPR} that they called Pinocchio.
+Ben-Sasson et. al \cite{BCTV} presented a variant of Pinocchio with the advantage of shorter verification time and verification key length. However, \cite{BCTV} did not present a security proof for this variant, and in fact Parno \cite{Parno15} found an attack against the \cite{BCTV} SNARK and suggested to mitigate it by imposing a certain linear independence condition on some of the public instance polynomials. In this note, we show a more severe attack on \cite{BCTV} that takes advantage of redundant elements in the proving key of \cite{BCTV} that should have been omitted.
+
+
+\subsection{Impacted work}
+\cite{BGG} gave for the first time a proof of security for \cite{BCTV}. However, the proof has an error and in fact we discovered the attack while going over the proof of \cite{BGG}.
+Any paper that cites the \cite{BCTV} construction as is inherits the error; the ones we found are \cite{Adsnark,Fuchsbauer18}.
+% 
+% Fortunately, the libsnark implementation\cite{libsnark} of \cite{BCTV}, perhaps as a result of following the prover algorithm more than the key generation algorithm, ends up generating parameters that do not contain the redundant elements that enable the attack;
+% so it doesn't apply to anyone using the libsnark code as is.
+% However, for 
+
+
+
+\subsection{Notation}
+We will be working over bilinear groups $\G1$, $\G2$, and $\Gt$ each of prime order $p$, together with respective generators $g_1$, $g_2$ and $g_T$.
+These groups are equipped with a non-degenerate bilinear pairing $e:\G1 \times \G2 \to \Gt$, with $e(g_1, g_2) = g_T$.
+We write $\G1$ and $\G2$ additively, and $\Gt$ multiplicatively.
+For $a \in \F$, we denote $\enc1{a}\defeq a\cdot g_1, \enc2{a}\defeq a\cdot g_2$.
+We use the notation $\G0\defeq \G1\times \G2$ and $\g0\defeq (g_1,g_2)$.
+Given an element $h \in \G0$, we denote by $h_1 (h_2)$ the $\G1 (\G2)$ element of $h$.
+We denote by $\G11,\G21$ the non-zero elements of $\G1,\G2$ and denote $\GG \defeq \G11\times \G21$.
+
+We recall the zk-SNARK of \cite{BCTV} as described in the paper.
+We assume familiary of quadratic arithmetic programs.
+We assume \F is a field of (prime) order $p$.
+We denote by \polysofdeg{d} the set of univariate polynomials of degree smaller than $d$ over the field \F.
+
+We assume familiarity with Quadratic Arithmetic Programs (QAPs). See e.g., Section 2.3 in \cite{groth16} for definitions.
+We use similar notation to \cite{BCTV}, denoting by $m$ the size of the QAP, $d$ the degree and $n$ the number of public inputs.
+More specifically, our QAP has the form \set{\sett{A_i(X),B_i(X),C_i(X)}{i\in [0..m]}, Z(X)}
+
+where $A_i,B_i,C_i\in \polysofdeg{d}$ and $Z$ has degree $d$.
+
+
+We proceed to describe the proving system of \cite{BCTV}.
+
+We assume we are already given a description of the groups $\G1,\G2,\Gt$, the pairing $e$, and uniformly chosen generators 
+$g_1\G1,g_2\G2$, and these are all public.
+\paragraph{\bctv key generation:}
+
+\begin{enumerate}
+ \item Sample random $\tau,\rho_A,\rho_B,\alpha_A,\alpha_B,\alpha_C,\gamma,\beta\in \F^*$
+ \item For $i\in [0..d]$ output $\pk_{H,i}\defeq \enc1{\tau^i}$
+ \item For $i\in [0..m]$ output
+ 
+ \begin{enumerate}
+  \item $\pk_{A,i}\defeq \enc1{\rho_A A_i(\tau)}$
+  
+\item  $\pk'_{A,i}\defeq\enc1{\rho_A \alpha_A A_i(\tau)}$,
+\item $\pk_{B,i}\defeq\enc2{\rho_B B_i(\tau)}$,
+\item $\pk_{B',i}\defeq \enc1{\rho_B \alpha_B B_i(\tau)}$,
+\item $\pk_{C,i}\defeq \enc1{\rho_A\rho_B C_i(\tau)}$,
+\item $\pk_{C,i}\defeq \enc1{\rho_A\rho_B C_i(\tau)}$ 
+\end{enumerate}
+\item Output the additional verification key elements $(\enc2{\alpha_A},\enc1{\alpha_B},\enc2{\alpha_C},\enc2{\gamma},\enc1{\beta\gamma},\enc2{\beta\gamma},\enc2{\rho_A\rho_B \cdot Z(\tau)})$
+ \end{enumerate}
+
+
+% We can think of \params as a deterministic function of the values $\tau,\rho_A,\rho_B,\alpha_A,\alpha_B,\alpha_C,\gamma,\beta\in \F^*$;
+% or alternatively of a vector $\secrets \in (\F^*)^8$ consisting of these values.
+% Actually, for our security proof we need to define \params to include all Pinocchio key elements ``given in both groups''.
+% %We also include an additional term called $P_H\cdot\alpha$ below, which makes using the knowledge of exponent assumption smoother (In fact, it seems there is a slight formal problem in how other papers use the assumption without this term).
+% Specifically, denoting $g\defeq (g_1,g_2)$, 
+% \[\params(\secrets)\defeq 
+%  (P_H, P_\inst,P_{\alpha \inst},P_K,V),
+% \]
+% where $P_H \defeq \sett{\tau^i\cdot g}{i\in [d]},P_\inst \defeq (P_A,P_B,P_C),P_{\alpha\inst} \defeq (P_{\alpha A},P_{\alpha B},P_{\alpha C}), P_K \defeq \beta\cdot (P_A+P_B+P_C)$,
+% where
+% \[P_A \defeq \vecc{A_i\cdot g_A}{i\in [m]}, P_{\alpha A} \defeq \vecc{A_i \alpha_A\cdot g_A}{i\in [m]},\]
+% and $P_B,P_{\alpha B},P_C,P_{\alpha C}$ defined similarly,
+% where
+% $g_A\defeq \rho_A\cdot g, g_B\defeq \rho_B\cdot g$ and $g_C\defeq \rho_A \rho_B\cdot g$,
+% and 
+% \[V\defeq  (\rho_A, \rho_B,\alpha_A,\alpha_B, \alpha_C,\rho_A\rho_B Z(\tau),\gamma,\beta\gamma)\cdot g\]
+% 
+% 
+% 
+% 
+% \begin{enumerate}
+%  \item Choose random $\alpha_A,\alpha_B,\alpha_C,\gamma,\beta,\rho_A,\rho_B,\tau\in \F$.
+%  
+% \end{enumerate}
+% 
+\paragraph{\bctv prover\\}
+The prover has in his hand a QAP solution $(x_0=1,x_1,\ldots,x_m)$ that coincides with the public input $x=(x_1,\ldots,x_n)$ and satisfies the following:
+If we define $A\defeq \sum_{i=0}^m x_i\cdot A_i, B\defeq \sum_{i=0}^m x_i \cdot B_i,$ and $C\defeq \sum_{i=0}^m x_i \cdot C_i$;
+then the polynomial $P\defeq A\cdot B - C$ will be divisble by the target polynomial $Z$, and \per can compute the polynomial $H$ of degree at most $n$ with $P=H\cdot Z$.
+Given the proving key, \per computes as linear combinations of the proving key elements
+\begin{enumerate}
+\item $\pi_A\defeq \enc1{\rho_A A(\tau)}$, $\pi'_A\defeq \enc1{\alpha_A\rho_A A(\tau)}$.
+\item $\pi_B\defeq \enc2{\rho_B B(\tau)}$, $\pi'_B \defeq \enc1{\alpha_B\rho_B B(\tau)}$.
+\item $\pi_C\defeq \enc1{\rho_A\rho_B C(\tau)}$, $\pi'_C \defeq \enc1{\alpha_C\rho_A\rho_B C(\tau)}$.
+\item $\pi_K\defeq \enc1{\beta(\rho_A A(\tau) + \rho_B B(\tau) + \rho_A\rho_B C(\tau))}$.
+\item $\pi_H\defeq \enc1{(P(\tau)/Z(\tau))}$.
+ \end{enumerate}
+ and outputs $\prf = (\pi_A,\pi_B,\pi_C,\pi'_A,\pi'_B,\pi'_C,\pi_H,\pi_K)$,
+ 
+
+\paragraph{\bctv verifier\\}
+Denote the ``public input component'' 
+\[ \PI(x) \defeq \pk_{A,0} + \sum_{i=1}^n x_i \pk_{A,i} = \enc1{A_0(\tau) + \sum_{i=1}^n x_i \rho_A A_i(\tau) }\]
+%  For an element $a$ of \G1 (\G2) denote by \dl{a} the discrete log of $a$ w.r.t $g_1(g_2)$.
+ The verifier, using pairings and the verification key, checks the following.
+\begin{enumerate}
+ \item $e(\pi'_A,g_2)=e(\pi_A,\enc2{\alpha_A})$.
+\item $e(\pi'_B, g_2)=e(\enc1{\alpha_B},\pi_B)$.
+\item $e(\pi'_C,g_2)=e(\pi_C,\enc2{\alpha_C})$.
+\item $e(\pi_K,\enc2{\gamma})=e(\PI(x)+\pi_A+\pi_C,\enc2{\beta\gamma})\cdot e(\enc1{\beta\gamma},\pi_B)$.
+\item $e(\PI(x)+\pi_A,\pi_B)= e(\pi_C,g_2)\cdot e(\pi_H,\enc2{Z(s)\rho_A\rho_B})$.
+ \end{enumerate}
+ 
+ \subsection{The attack}\label{subsec:attack}
+ Note that the elements \sett{\pk'_{A,i}}{i\in [0..n]} are not used at all by the honest verifier and prover, and thus could have been omitted from the key - we show here these elements allow to replace the public input arbitrarily when starting from a valid proof.
+ Loosely speaking, we do this by adding a factor to $\pi_A$ that ``switches'' the public input the proof is arguing about.
+ The first verifier check - the ``knowledge check'' for $\pi_A$, should catch us; but the redundant elements allow us to add
+ the analogous factor to $\pi'_A$ and pass the check.
+ 
+ 
+ Suppose we are given a valid proof $\prf = (\pi_A,\pi_B,\pi_C,\pi'_A,\pi'_B,\pi'_C,\pi_H,\pi_K)$
+ for a public input $(x_1,\ldots,x_n)\in \F^{n}$.
+ Choose any $(x'_1,\ldots,x'_n)\in \F^n$.
+
+ Set 
+ \[\eta_A\defeq \pi_A + \sum_{i=1}^n (x_i-x'_i)\pk_{A,i}\]
+ \[\eta'_A\defeq \pi'_A + \sum_{i=1}^n (x_i-x'_i) \pk'_{A,i}\]
+ 
+ We claim that $\prf^* \defeq (\eta_A,\eta'_A,\pi_B,\pi'_B,\pi_C,\pi'_C,\pi_K,\pi_H)$ is a valid proof for
+ public input $x'=(x'_1,\ldots,x'_n)$.
+ 
+ Note that the verifier checks with public input $x'$ and proof $\prf^*$ are
+\begin{enumerate}
+ \item $e(\eta'_A,g_2)=e(\eta_A,\enc2{\alpha_A})$.
+\item $e(\pi'_B, g_2)=e(\enc1{\alpha_B},\pi_B)$.
+\item $e(\pi'_C,g_2)=e(\pi_C,\enc2{\alpha_C})$.
+\item $e(\pi_K,\enc2{\gamma})=e(\PI(x')+\eta_A+\pi_C,\enc2{\beta\gamma})\cdot e(\enc1{\beta\gamma},\pi_B)$.
+\item $e(\PI(x')+\eta_A,\pi_B)= e(\pi_C,g_2)\cdot e(\pi_H,\enc2{Z(s)\rho_A\rho_B})$.
+ \end{enumerate}
+ 
+ 
+ We show that the five verifier equations all hold.
+ \begin{enumerate}
+  \item The check  $e(\eta'_A,g_2)=e(\eta_A,\enc2{\alpha_A})$;
+  this is where the redundant elements crucially come into play.
+  
+  
+  We have
+  \[\eta'_A = \pi'_A + \sum_{i=1}^n (x_i-x'_i) \pk'_{A,i}\]
+ So
+ \[e(\eta'_A,g_2) = \e(\pi'_A,g_2)\cdot e\left(\sum_{i=1}^n (x_i-x'_i) \pk'_{A,i},g_2\right)\]
+ Since \prf is a valid proof, this is:
+  \[=e(\pi_A,\enc2{\alpha_A})\cdot e\left(\sum_{i=1}^n (x_i-x'_i) \pk'_{A,i},g_2\right)\]
+  Using $\pk'_{A,i} = \alpha_A\cdot \pk_{A,i}$ for every $i$,
+  \[=e(\pi_A,\enc2{\alpha_A})\cdot e\left(\alpha_A\cdot \left(\sum_{i=1}^n (x_i-x'_i) \pk_{A,i}\right),g_2\right)\]
+Using bi-linearity of the pairing:
+ \[=e(\pi_A,\enc2{\alpha_A})\cdot e\left(\sum_{i=1}^n (x_i-x'_i) \pk_{A,i},\enc2{\alpha_A}\right)\]
+  \[=e\left(\pi_A+\sum_{i=1}^n (x_i-x'_i) \pk_{A,i},\enc2{\alpha_A}\right) = e(\eta_A,\enc2{\alpha_A}).\]
+  \item The second and third checks involve the unchanged $\pi_B,\pi'_B,\pi_C,\pi'_C$
+  and thus pass since \prf was accepting.
+  \item The fourth and fifth equations are also identical in \prf and $\prf^*$.
+  The only difference is that the later replaces the term $\PI(x) + \pi_A$ 
+  with $\PI(x')+ \eta_A$. And 
+    \[\PI(x) + \pi_A = \pk_{A,0} + \sum_{i=1}^n x_i\pk_{A,i} + \pi_A = 
+  \pk_{A,0} + \sum_{i=1}^n x'_i\pk_{A,i} +  \sum_{i=1}^n (x_i-x'_i) \pk_{A,i}  + \pi_A =
+  \PI(x') + \eta_A.
+  \]
+
+ \end{enumerate}
+
+ 
+
+\section*{Acknowledgements}
+We thank Sean Bowe for useful discussions.
+\bibliographystyle{alpha}
+\bibliography{References}
+
+\end{document}
+ 
