@@ -228,16 +228,15 @@ We also provide a proof of security for the \cite{BCTV} zk-SNARK in the generic 
 \section{Introduction}
 
 Parno et. al \cite{PGHR} presented a zk-SNARK construction based on the breakthrough work of \cite{GGPR} that they called Pinocchio.
-Ben-Sasson et. al \cite{BCTV} presented a variant of Pinocchio with the advantage of shorter verification time and verification key length. However, \cite{BCTV} did not present a security proof for this variant, and in fact Parno \cite{Parno15} found an attack against the \cite{BCTV} SNARK and suggested to mitigate it by imposing a certain linear independence condition on some of the public instance polynomials. In this note, we show a more severe attack on \cite{BCTV} that takes advantage of redundant elements in the proving key of \cite{BCTV} that should have been omitted.
+Ben-Sasson et. al \cite{BCTV} presented a variant of Pinocchio with the advantage of shorter verification time and verification key length, at the expense of an arguably negligible increase in proving time. However, \cite{BCTV} did not present a security proof for this variant, and in fact Parno \cite{Parno15} found an attack against the \cite{BCTV} SNARK and suggested to mitigate it by imposing a certain linear independence condition on some of the public instance polynomials - which \cite{BCTV} did in a revised version of the paper and corresponding implementation \cite{libsnark}. In this note, we show a more severe attack on \cite{BCTV} that takes advantage of redundant elements in the proving key that should have been omitted.
 
 
 \subsection{Impacted work}
-\cite{BGG} gave for the first time a proof of security for \cite{BCTV}. However, the proof has an error and in fact we discovered the attack while going over the proof of \cite{BGG}.
-Any paper that cites the \cite{BCTV} construction as is inherits the error; the ones we found are \cite{Adsnark,Fuchsbauer18}.
+\cite{BGG} gave for the first time a proof of security for \cite{BCTV}. However, the proof has an error and in fact we discovered the attack while going over it.
+Any paper that cites the \cite{BCTV} construction as is inherits the flaw; the ones we found are \cite{Adsnark,Fuchsbauer18}.
 % 
 % Fortunately, the libsnark implementation\cite{libsnark} of \cite{BCTV}, perhaps as a result of following the prover algorithm more than the key generation algorithm, ends up generating parameters that do not contain the redundant elements that enable the attack;
-% so it doesn't apply to anyone using the libsnark code as is.
-% However, for 
+% thus someone generating parameters using the libsnark key generation algorithm (e.g. in a designated verifier setting) is not vulnerable to the attack. However, someone using parameters completely matching the \cite{BCTV} paper, e.g. ones generated in the MPC described in \cite{BGG}, is.
 
 
 
@@ -245,28 +244,26 @@ Any paper that cites the \cite{BCTV} construction as is inherits the error; the 
 We will be working over bilinear groups $\G1$, $\G2$, and $\Gt$ each of prime order $p$, together with respective generators $g_1$, $g_2$ and $g_T$.
 These groups are equipped with a non-degenerate bilinear pairing $e:\G1 \times \G2 \to \Gt$, with $e(g_1, g_2) = g_T$.
 We write $\G1$ and $\G2$ additively, and $\Gt$ multiplicatively.
+We denote by \F the field of the same order $p$.
 For $a \in \F$, we denote $\enc1{a}\defeq a\cdot g_1, \enc2{a}\defeq a\cdot g_2$.
-We use the notation $\G0\defeq \G1\times \G2$ and $\g0\defeq (g_1,g_2)$.
-Given an element $h \in \G0$, we denote by $h_1 (h_2)$ the $\G1 (\G2)$ element of $h$.
-We denote by $\G11,\G21$ the non-zero elements of $\G1,\G2$ and denote $\GG \defeq \G11\times \G21$.
+% We use the notation $\G0\defeq \G1\times \G2$ and $\g0\defeq (g_1,g_2)$.
+% Given an element $h \in \G0$, we denote by $h_1 (h_2)$ the $\G1 (\G2)$ element of $h$.
+% We denote by $\G11,\G21$ the non-zero elements of $\G1,\G2$ and denote $\GG \defeq \G11\times \G21$.
 
-We recall the zk-SNARK of \cite{BCTV} as described in the paper.
+\subsection{Description of \cite{BCTV} SNARK}\label{subsec:bctv}
+
+We recall the zk-SNARK of \cite{BCTV} as described in that paper.
 We assume familiary of quadratic arithmetic programs.
-We assume \F is a field of (prime) order $p$.
-We denote by \polysofdeg{d} the set of univariate polynomials of degree smaller than $d$ over the field \F.
-
-We assume familiarity with Quadratic Arithmetic Programs (QAPs). See e.g., Section 2.3 in \cite{groth16} for definitions.
+See e.g., Section 2.3 in \cite{groth16} for definitions.
 We use similar notation to \cite{BCTV}, denoting by $m$ the size of the QAP, $d$ the degree and $n$ the number of public inputs.
 More specifically, our QAP has the form \set{\sett{A_i(X),B_i(X),C_i(X)}{i\in [0..m]}, Z(X)}
-
-where $A_i,B_i,C_i\in \polysofdeg{d}$ and $Z$ has degree $d$.
+where $A_i,B_i,C_i\in \F[X]$ have degree at most\footnote{\cite{BCTV} define $A_i,B_i,C_i$ to be of degree strictly less than $d$, however since $Z$ needs to be later added to \set{A_i},\set{B_i},\set{C_i} for zero-knowledge, it is more convenient for us to allow degree at most $d$ and assume $Z$ is already included. Note that in terms of the set of satisfiable instances $x\in \F^n$ every degree $d$ QAP is equivalent to one where \set{A_i,B_i,C_i} have degree smaller than $d$ obtained by taking the original polynomials mod $Z$.} $d$, and $Z\in \F[X]$ has degree exactly $d$.
 
 
 We proceed to describe the proving system of \cite{BCTV}.
-
 We assume we are already given a description of the groups $\G1,\G2,\Gt$, the pairing $e$, and uniformly chosen generators 
-$g_1\G1,g_2\G2$, and these are all public.
-\paragraph{\bctv key generation:}
+$g_1\in \G1,g_2\in \G2$, and these are all public.
+\paragraph{\underline{\bctv key generation:}}
 
 \begin{enumerate}
  \item Sample random $\tau,\rho_A,\rho_B,\alpha_A,\alpha_B,\alpha_C,\gamma,\beta\in \F^*$
@@ -276,59 +273,37 @@ $g_1\G1,g_2\G2$, and these are all public.
  \begin{enumerate}
   \item $\pk_{A,i}\defeq \enc1{\rho_A A_i(\tau)}$
   
-\item  $\pk'_{A,i}\defeq\enc1{\rho_A \alpha_A A_i(\tau)}$,
+\item  $\pk'_{A,i}\defeq\enc1{\alpha_A\rho_A A_i(\tau)}$,
 \item $\pk_{B,i}\defeq\enc2{\rho_B B_i(\tau)}$,
-\item $\pk_{B',i}\defeq \enc1{\rho_B \alpha_B B_i(\tau)}$,
+\item $\pk'_{B,i}\defeq \enc1{\alpha_B\rho_B B_i(\tau)}$,
 \item $\pk_{C,i}\defeq \enc1{\rho_A\rho_B C_i(\tau)}$,
-\item $\pk_{C,i}\defeq \enc1{\rho_A\rho_B C_i(\tau)}$ 
+\item $\pk'_{C,i}\defeq \enc1{\alpha_C \rho_A\rho_B C_i(\tau)}$ 
+\item $\pk_{K,i}\defeq \enc1{\beta\cdot (\rho_A A_i(\tau) + \rho_B B_i(\tau) + \rho_A\rho_B C_i(\tau))}$ 
+
 \end{enumerate}
 \item Output the additional verification key elements $(\enc2{\alpha_A},\enc1{\alpha_B},\enc2{\alpha_C},\enc2{\gamma},\enc1{\beta\gamma},\enc2{\beta\gamma},\enc2{\rho_A\rho_B \cdot Z(\tau)})$
  \end{enumerate}
 
-
-% We can think of \params as a deterministic function of the values $\tau,\rho_A,\rho_B,\alpha_A,\alpha_B,\alpha_C,\gamma,\beta\in \F^*$;
-% or alternatively of a vector $\secrets \in (\F^*)^8$ consisting of these values.
-% Actually, for our security proof we need to define \params to include all Pinocchio key elements ``given in both groups''.
-% %We also include an additional term called $P_H\cdot\alpha$ below, which makes using the knowledge of exponent assumption smoother (In fact, it seems there is a slight formal problem in how other papers use the assumption without this term).
-% Specifically, denoting $g\defeq (g_1,g_2)$, 
-% \[\params(\secrets)\defeq 
-%  (P_H, P_\inst,P_{\alpha \inst},P_K,V),
-% \]
-% where $P_H \defeq \sett{\tau^i\cdot g}{i\in [d]},P_\inst \defeq (P_A,P_B,P_C),P_{\alpha\inst} \defeq (P_{\alpha A},P_{\alpha B},P_{\alpha C}), P_K \defeq \beta\cdot (P_A+P_B+P_C)$,
-% where
-% \[P_A \defeq \vecc{A_i\cdot g_A}{i\in [m]}, P_{\alpha A} \defeq \vecc{A_i \alpha_A\cdot g_A}{i\in [m]},\]
-% and $P_B,P_{\alpha B},P_C,P_{\alpha C}$ defined similarly,
-% where
-% $g_A\defeq \rho_A\cdot g, g_B\defeq \rho_B\cdot g$ and $g_C\defeq \rho_A \rho_B\cdot g$,
-% and 
-% \[V\defeq  (\rho_A, \rho_B,\alpha_A,\alpha_B, \alpha_C,\rho_A\rho_B Z(\tau),\gamma,\beta\gamma)\cdot g\]
-% 
-% 
-% 
-% 
-% \begin{enumerate}
-%  \item Choose random $\alpha_A,\alpha_B,\alpha_C,\gamma,\beta,\rho_A,\rho_B,\tau\in \F$.
-%  
-% \end{enumerate}
-% 
-\paragraph{\bctv prover\\}
+\newcommand{\Amid}{\ensuremath{A_{\mathrm{mid}}}\xspace}
+\paragraph{\underline{\bctv prover:}\\}
 The prover has in his hand a QAP solution $(x_0=1,x_1,\ldots,x_m)$ that coincides with the public input $x=(x_1,\ldots,x_n)$ and satisfies the following:
 If we define $A\defeq \sum_{i=0}^m x_i\cdot A_i, B\defeq \sum_{i=0}^m x_i \cdot B_i,$ and $C\defeq \sum_{i=0}^m x_i \cdot C_i$;
-then the polynomial $P\defeq A\cdot B - C$ will be divisble by the target polynomial $Z$, and \per can compute the polynomial $H$ of degree at most $n$ with $P=H\cdot Z$.
+then the polynomial $P\defeq A\cdot B - C$ will be divisble by the target polynomial $Z$, and \per can compute the polynomial $H$ of degree at most $d$ with $P=H\cdot Z$. Let $\Amid\defeq A -\sum_{i=0}^n x_i\cdot A_i$.
+
 Given the proving key, \per computes as linear combinations of the proving key elements
 \begin{enumerate}
-\item $\pi_A\defeq \enc1{\rho_A A(\tau)}$, $\pi'_A\defeq \enc1{\alpha_A\rho_A A(\tau)}$.
+\item $\pi_A\defeq \enc1{\rho_A \Amid(\tau)}$, $\pi'_A\defeq \enc1{\alpha_A\rho_A \Amid(\tau)}$.
 \item $\pi_B\defeq \enc2{\rho_B B(\tau)}$, $\pi'_B \defeq \enc1{\alpha_B\rho_B B(\tau)}$.
 \item $\pi_C\defeq \enc1{\rho_A\rho_B C(\tau)}$, $\pi'_C \defeq \enc1{\alpha_C\rho_A\rho_B C(\tau)}$.
 \item $\pi_K\defeq \enc1{\beta(\rho_A A(\tau) + \rho_B B(\tau) + \rho_A\rho_B C(\tau))}$.
-\item $\pi_H\defeq \enc1{(P(\tau)/Z(\tau))}$.
+\item $\pi_H\defeq \enc1{H(\tau}$.
  \end{enumerate}
  and outputs $\prf = (\pi_A,\pi_B,\pi_C,\pi'_A,\pi'_B,\pi'_C,\pi_H,\pi_K)$,
  
 
-\paragraph{\bctv verifier\\}
+\paragraph{\underline{\bctv verifier:}\\}
 Denote the ``public input component'' 
-\[ \PI(x) \defeq \pk_{A,0} + \sum_{i=1}^n x_i \pk_{A,i} = \enc1{A_0(\tau) + \sum_{i=1}^n x_i \rho_A A_i(\tau) }\]
+\[ \PI(x) \defeq \pk_{A,0} + \sum_{i=1}^n x_i \pk_{A,i} = \enc1{\rho_A A_0(\tau) + \sum_{i=1}^n x_i \rho_A A_i(\tau) }\]
 %  For an element $a$ of \G1 (\G2) denote by \dl{a} the discrete log of $a$ w.r.t $g_1(g_2)$.
  The verifier, using pairings and the verification key, checks the following.
 \begin{enumerate}
@@ -336,38 +311,38 @@ Denote the ``public input component''
 \item $e(\pi'_B, g_2)=e(\enc1{\alpha_B},\pi_B)$.
 \item $e(\pi'_C,g_2)=e(\pi_C,\enc2{\alpha_C})$.
 \item $e(\pi_K,\enc2{\gamma})=e(\PI(x)+\pi_A+\pi_C,\enc2{\beta\gamma})\cdot e(\enc1{\beta\gamma},\pi_B)$.
-\item $e(\PI(x)+\pi_A,\pi_B)= e(\pi_C,g_2)\cdot e(\pi_H,\enc2{Z(s)\rho_A\rho_B})$.
+\item $e(\PI(x)+\pi_A,\pi_B)= e(\pi_C,g_2)\cdot e(\pi_H,\enc2{Z(\tau)\rho_A\rho_B})$.
  \end{enumerate}
  
- \subsection{The attack}\label{subsec:attack}
- Note that the elements \sett{\pk'_{A,i}}{i\in [0..n]} are not used at all by the honest verifier and prover, and thus could have been omitted from the key - we show here these elements allow to replace the public input arbitrarily when starting from a valid proof.
+ \section{The attack}\label{sec:attack}
+ Note that the elements \sett{\pk'_{A,i}}{i\in [0..n]} are not used at all by the verifier and honest prover, and thus could have been omitted from the key. We show here these elements allow to replace the public input arbitrarily when starting from a valid proof.
  Loosely speaking, we do this by adding a factor to $\pi_A$ that ``switches'' the public input the proof is arguing about.
  The first verifier check - the ``knowledge check'' for $\pi_A$, should catch us; but the redundant elements allow us to add
- the analogous factor to $\pi'_A$ and pass the check.
+ the analogous factor to $\pi'_A$ and pass the check. Details follow.
  
  
  Suppose we are given a valid proof $\prf = (\pi_A,\pi_B,\pi_C,\pi'_A,\pi'_B,\pi'_C,\pi_H,\pi_K)$
- for a public input $(x_1,\ldots,x_n)\in \F^{n}$.
- Choose any $(x'_1,\ldots,x'_n)\in \F^n$.
+ for a public input $x=(x_1,\ldots,x_n)\in \F^{n}$.
+ Choose any $x'=(x'_1,\ldots,x'_n)\in \F^n$.
 
  Set 
  \[\eta_A\defeq \pi_A + \sum_{i=1}^n (x_i-x'_i)\pk_{A,i}\]
  \[\eta'_A\defeq \pi'_A + \sum_{i=1}^n (x_i-x'_i) \pk'_{A,i}\]
  
  We claim that $\prf^* \defeq (\eta_A,\eta'_A,\pi_B,\pi'_B,\pi_C,\pi'_C,\pi_K,\pi_H)$ is a valid proof for
- public input $x'=(x'_1,\ldots,x'_n)$.
+ public input $x'$.
  
- Note that the verifier checks with public input $x'$ and proof $\prf^*$ are
+ The verifier checks with public input $x'$ and proof $\prf^*$ are
 \begin{enumerate}
  \item $e(\eta'_A,g_2)=e(\eta_A,\enc2{\alpha_A})$.
 \item $e(\pi'_B, g_2)=e(\enc1{\alpha_B},\pi_B)$.
 \item $e(\pi'_C,g_2)=e(\pi_C,\enc2{\alpha_C})$.
 \item $e(\pi_K,\enc2{\gamma})=e(\PI(x')+\eta_A+\pi_C,\enc2{\beta\gamma})\cdot e(\enc1{\beta\gamma},\pi_B)$.
-\item $e(\PI(x')+\eta_A,\pi_B)= e(\pi_C,g_2)\cdot e(\pi_H,\enc2{Z(s)\rho_A\rho_B})$.
+\item $e(\PI(x')+\eta_A,\pi_B)= e(\pi_C,g_2)\cdot e(\pi_H,\enc2{Z(\tau)\rho_A\rho_B})$.
  \end{enumerate}
  
  
- We show that the five verifier equations all hold.
+ We show that the five equations all hold.
  \begin{enumerate}
   \item The check  $e(\eta'_A,g_2)=e(\eta_A,\enc2{\alpha_A})$;
   this is where the redundant elements crucially come into play.
@@ -395,8 +370,43 @@ Using bi-linearity of the pairing:
   \]
 
  \end{enumerate}
-
  
+ \renewcommand{\span}[1]{\ensuremath{\mathrm{Span}_{\F}(#1)}\xspace}
+ \newcommand{\bctvprime}{\ensuremath{\bctv'}\xspace}
+\section{Security proof in the generic group model}\label{sec:ggmproof}
+Let us denote by \bctvprime the scheme identical to the one in \cite{BCTV} described in Subsection \ref{subsec:bctv},
+with two modifications:
+\begin{itemize}
+ \item The elements $\sett{\pk_{A',i}}{i\in [0..n]}$ are excluded from the proving key.
+ \item The scheme is only defined for QAPs, where the polynomials \set{A_i} satisfy
+   \begin{enumerate}
+    \item The polynomials \sett{A_i}{i\in [0..n]} are linearly independent (this condition already appears in \cite{BCTV} at \cite{Parno15}'s suggestion).
+    \item $\span{\sett{A_i}{i\in[0..n]}}\cap \span{\sett{A_i}{i\in [n+1..m]}}=\set{0}$. \footnote{In conversation with Alessandro Chiesa and Madars Virza, we  learned that they were aware of the necessity of this condition, and it is satisfied by any QAP constructed in libsnark\cite{libsnark}. It also already appears in \cite{BGG}.}
+   \end{enumerate}
+
+\end{itemize}
+
+We show \bctvprime is sound in the generic group model.
+We will use the following simple linear algebra claim.
+\begin{claim}\label{clm:independence}
+ Fix positive integers $n<m$. Let $v_0,\ldots,v_m$ be vectors in a vector space over \F such that
+ \begin{enumerate}
+  \item $v_0,\ldots,v_n$ are linearly independent.
+  \item Defining $V = \span{v_0,\ldots,v_n}$ and $U=\span{v_{n+1},\ldots,v_m}$, we have $V\cap U =\set{0}$.
+ \end{enumerate}
+Suppose we are given $(x_0,\ldots,x_m),(a_0,\ldots,a_m)\in \F^m$ such that $\sum_{i=0}^m x_i\cdot v_i = \sum_{i=0}^m a_i\cdot v_i$.
+Then $(x_0,\ldots,x_n) = (a_0,\ldots,a_n)$
+\end{claim}
+\begin{proof}
+ Since $\sum_{i=0}^m x_i\cdot v_i = \sum_{i=0}^m a_i\cdot v_i$,
+ we have
+ \[\sum_{i=0}^n (x_i-a_i) v_i = \sum_{i=n+1}^m (a_i-x_i)v_i\]
+ The zero-intersection condition implies $\sum_{i=0}^n (x_i-a_i) v_i=0 $
+ and the linear independence of $v_0,\ldots,v_n$ now implies
+ $x_i-a_i=0$ for $i\in [0..n]$.
+ 
+\end{proof}
+
 
 \section*{Acknowledgements}
 We thank Sean Bowe for useful discussions.
