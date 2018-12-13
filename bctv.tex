@@ -219,7 +219,7 @@ On the security of the BCTV Pinocchio zk-SNARK variant}
 \newcommand{\PI}{\ensuremath{\mathsf{PI}}\xspace}
 \newcommand{\dl}[1]{\ensuremath{\widehat{#1}}\xspace}
 \begin{abstract}
-The main result of this note is a severe flaw in the description of the zk-SNARK of \cite{BCTV}.
+The main result of this note is a severe flaw in the description of the zk-SNARK in \cite{BCTV}.
 The flaw stems from including redundant elements in the CRS as compared to that of the original Pinocchio protocol \cite{PGHR} that it is vital not to expose.
 The flaw enables creating a proof of knowledge for *any* public input given a valid proof for *some* public input.
 We also provide a proof of security for the \cite{BCTV} zk-SNARK in the generic group model, when these elements are excluded from the CRS, provided a certain linear algebraic condition is satisfied by the QAP polynomials.
@@ -378,7 +378,7 @@ Let us denote by \bctvprime the scheme identical to the one in \cite{BCTV} descr
 with two modifications:
 \begin{itemize}
  \item The elements $\sett{\pk_{A',i}}{i\in [0..n]}$ are excluded from the proving key.
- \item The scheme is only defined for QAPs, where the polynomials \set{A_i} satisfy
+ \item The scheme is only defined for QAPs where the polynomials \set{A_i} satisfy
    \begin{enumerate}
     \item The polynomials \sett{A_i}{i\in [0..n]} are linearly independent (this condition already appears in \cite{BCTV} at \cite{Parno15}'s suggestion).
     \item $\span{\sett{A_i}{i\in[0..n]}}\cap \span{\sett{A_i}{i\in [n+1..m]}}=\set{0}$. \footnote{In conversation with Alessandro Chiesa and Madars Virza, we  learned that they were aware of the necessity of this condition, and it is satisfied by any QAP constructed in libsnark\cite{libsnark}. It also already appears in \cite{BGG}.}
@@ -386,7 +386,7 @@ with two modifications:
 
 \end{itemize}
 
-We show \bctvprime is sound in the generic group model.
+We show \bctvprime is knowledge sound in the generic group model.
 We will use the following simple linear algebra claim.
 \begin{claim}\label{clm:independence}
  Fix positive integers $n<m$. Let $v_0,\ldots,v_m$ be vectors in a vector space over \F such that
@@ -395,7 +395,7 @@ We will use the following simple linear algebra claim.
   \item Defining $V = \span{v_0,\ldots,v_n}$ and $U=\span{v_{n+1},\ldots,v_m}$, we have $V\cap U =\set{0}$.
  \end{enumerate}
 Suppose we are given $(x_0,\ldots,x_m),(a_0,\ldots,a_m)\in \F^m$ such that $\sum_{i=0}^m x_i\cdot v_i = \sum_{i=0}^m a_i\cdot v_i$.
-Then $(x_0,\ldots,x_n) = (a_0,\ldots,a_n)$
+Then $(x_0,\ldots,x_n) = (a_0,\ldots,a_n)$.
 \end{claim}
 \begin{proof}
  Since $\sum_{i=0}^m x_i\cdot v_i = \sum_{i=0}^m a_i\cdot v_i$,
@@ -407,6 +407,82 @@ Then $(x_0,\ldots,x_n) = (a_0,\ldots,a_n)$
  
 \end{proof}
 
+
+We proceed to prove knowledge soundness of \bctvprime in the generic group model.
+Following \cite{groth16} (see also Section 2 of \cite{segroth} for formal details), it suffices to show knowledge
+soundness of \bctvprime as a Non-Interactive Linear Proof (NILP). That is, 
+\begin{itemize}
+\item The CRS elements and proof elements are the field elements originally encoded in the group elements, rather than the group elements.
+\item The malicious prover must output, given only the public input $x\in\F^n$, $\prf = (\pi_A,\pi_B,\pi_C,\pi'_A,\pi'_B,\pi'_C,\pi_H,\pi_K)$ as linear combinations of the CRS elements, such that the verifier equations hold as a polynomial identity in 
+$\tau,\rho_A,\rho_B,\alpha_A,\alpha_B,\alpha_C,\gamma,\beta$ as formal variables.
+\item To prove knowledge soundness, it then suffices to efficiently derive from the coefficients of these linear combinations a QAP witness for $x$.
+\end{itemize}
+
+Suppose the adversary has output such a set of coefficients.
+Our NILP CRS is now the set of \emph{field elements}
+
+\begin{enumerate}
+ \item For $i\in [0..d]$, $\tau^i$.
+ \item For $i\in [0..m]$ 
+ 
+ \begin{enumerate}
+  \item $\rho_A A_i(\tau)$
+\item $\rho_B B_i(\tau)$
+\item $\alpha_B\rho_B B_i(\tau)$
+\item $\rho_A\rho_B C_i(\tau)$
+\item $\alpha_C \rho_A\rho_B C_i(\tau)$ 
+\item $\beta(\rho_A A_i(\tau) + \rho_B B_i(\tau) + \rho_A\rho_B C_i(\tau))$ 
+\end{enumerate}
+\item For $i\in [n+1..m]$, $\alpha_A\rho_A A_i(\tau)$.
+
+\item $\alpha_A,\alpha_B,\alpha_C,\gamma,\beta\gamma,\rho_a\rho_b Z(\tau)$.
+\end{enumerate}
+
+and our verification equations are now:
+\begin{enumerate}
+ \item $\pi'_A= \alpha_A\cdot \pi_A$.
+\item $\pi'_B=\alpha_B\cdot \pi_B$.
+\item $\pi'_C=\alpha_C\cdot \pi_C$.
+\item $\beta\gamma\cdot \pi_K =\gamma\cdot (\PI(x)+\pi_A+\pi_B+\pi_C)$.
+\item $(\PI(x)+\pi_A)\cdot \pi_B= \pi_C + \pi_H\cdot Z(\tau)\rho_A\rho_B$,
+ \end{enumerate}
+where
+\[\PI(x)\defeq \rho_A A_0(\tau) + \sum_{i=1}^n x_i\cdot \rho_A A_i(\tau) .\]
+ 
+
+The first equation implies that $\pi'_A$ only has non-zero coefficients for elements with an $\alpha_A$ component, i.e.
+\[\pi'_A = \sum_{i=n+1}^m a_i\cdot  \alpha_A\rho_A A_i(\tau) + a^*\cdot \alpha_A \]
+for some $a_{n+1},\ldots,a_m,a^* \in \F$.
+Which implies 
+\[\pi_A = \sum_{i=n+1}^m a_i \cdot \rho_A A_i(\tau) + a^*\]
+From the second and third checks, we can similarly conclude:
+\[\pi_B = \sum_{i=0}^m b_i\cdot  \rho_B B_i(\tau) + b^*\]
+
+\[\pi_C = \sum_{i=0}^m c_i \cdot \rho_A\rho_B C_i(\tau) + c^*\]
+
+Similarly, the fourth equation tells us that $\pi_K$ must only use with non-zero coefficient elements with a $\beta$ factor,
+i.e. the elements $\set{\gamma\beta,\sett{\beta(\rho_A A_i(\tau) + \rho_B B_i(\tau) + \rho_A\rho_B C_i(\tau))}{i\in[0..m}}$.
+Hence we can write
+\[\pi_K = \sum_{i=0}^m k_i\cdot\beta(\rho_A A_i(\tau) + \rho_B B_i(\tau) + \rho_A\rho_B C_i(\tau)) + k^*\cdot \gamma\beta\]
+and therefore
+\[\PI(x)+\pi_A +\pi_B+\pi_C= \sum_{i=0}^m k_i\cdot(\rho_A A_i(\tau) + \rho_B B_i(\tau) + \rho_A\rho_B C_i(\tau)) + k^*\cdot \gamma\]
+Therefore
+\[\sum_{i=0}^m a_i \rho_A A_i(\tau) = \sum_{i=0}^m k_i\rho_A A_i(\tau),\]
+and
+\[\sum_{i=0}^m a_i A_i(\tau) = \sum_{i=0}^m k_i A_i(\tau).\]
+
+Invoking Claim \ref{clm:independence}, this implies $k_i=a_i$ for $i\in[0..n]$.
+Since the coefficients of $\rho_B,\rho_A\rho_B$ must also match, we have
+\[\sum_{i=0}^m b_i \rho_B B_i(\tau)= \sum_{i=0}^m k_i \rho_B B_i(\tau),\sum_{i=0}^m c_i \rho_A\rho_B C_i(\tau)=\sum_{i=0}^m k_i \rho_A\rho_B C_i(\tau) \]
+So
+\[\pi_A=\sum_{i=0}^m k_i \rho_A A_i(\tau)+a^*,\pi_B=\sum_{i=0}^m k_i \rho_B B_i(\tau)+b^*,\pi_C=\sum_{i=0}^m k_i \rho_A\rho_B C_i(\tau)+c^*\]
+
+
+Now invoking the fifth equation we have
+\[(\PI(x)+\pi_A)\cdot \pi_B= \pi_C + \pi_H\cdot Z(\tau)\rho_A\rho_B\]
+The $\rho_A\rho_B$ coefficient of each side must be equal, giving
+\[(\sum_{i=0}^m k_i A_i(\tau))(\sum_{i=0}^m k_i B_i(\tau)) = \sum_{i=0}^m C_i(\tau) + H(\tau)Z(\tau)\]
+Since $k_i=x_i$ for $i\in [0..n]$ this means $k_0,\ldots,k_n$ is a QAP solution for public input $x$.
 
 \section*{Acknowledgements}
 We thank Sean Bowe for useful discussions.
