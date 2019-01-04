@@ -24,7 +24,7 @@
 %\drafttrue
 \draftfalse
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Textclass specific LaTeX commands.
-\numberwithin{equation}{section} %% Comment out for sequentially-numbered
+%\numberwithin{equation}{section} %% Comment out for sequentially-numbered
 \numberwithin{figure}{section} %% Comment out for sequentially-numbered
 \newtheorem{thm}{Theorem}[section]
 \newtheorem{conjecture}[thm]{Conjecture}
@@ -278,10 +278,10 @@ $g_1\in \G1,g_2\in \G2$, and these are all public.
 \item $\pk'_{B,i}\defeq \enc1{\alpha_B\rho_B B_i(\tau)}$,
 \item $\pk_{C,i}\defeq \enc1{\rho_A\rho_B C_i(\tau)}$,
 \item $\pk'_{C,i}\defeq \enc1{\alpha_C \rho_A\rho_B C_i(\tau)}$ 
-\item $\pk_{K,i}\defeq \enc1{\beta\cdot (\rho_A A_i(\tau) + \rho_B B_i(\tau) + \rho_A\rho_B C_i(\tau))}$ 
+\item $\pk_{K,i}\defeq \enc1{\beta (\rho_A A_i(\tau) + \rho_B B_i(\tau) + \rho_A\rho_B C_i(\tau))}$ 
 
 \end{enumerate}
-\item Output the additional verification key elements $(\enc2{\alpha_A},\enc1{\alpha_B},\enc2{\alpha_C},\enc2{\gamma},\enc1{\beta\gamma},\enc2{\beta\gamma},\enc2{\rho_A\rho_B \cdot Z(\tau)})$
+\item Output the additional verification key elements $(\enc2{\alpha_A},\enc1{\alpha_B},\enc2{\alpha_C},\enc2{\gamma},\enc1{\beta\gamma},\enc2{\beta\gamma},\enc2{\rho_A\rho_B Z(\tau)})$
  \end{enumerate}
 
 \newcommand{\Amid}{\ensuremath{A_{\mathrm{mid}}}\xspace}
@@ -329,7 +329,7 @@ Denote the ``public input component''
  \[\eta_A\defeq \pi_A + \sum_{i=1}^n (x_i-x'_i)\pk_{A,i}\]
  \[\eta'_A\defeq \pi'_A + \sum_{i=1}^n (x_i-x'_i) \pk'_{A,i}\]
  
- We claim that $\prf^* \defeq (\eta_A,\eta'_A,\pi_B,\pi'_B,\pi_C,\pi'_C,\pi_K,\pi_H)$ is a valid proof for
+ We claim that $\prf^* \defeq (\eta_A,\pi_B,\pi_C,\eta'_A,\pi'_B,\pi'_C,\pi_K,\pi_H)$ is a valid proof for
  public input $x'$.
  
  The verifier checks with public input $x'$ and proof $\prf^*$ are
@@ -360,7 +360,7 @@ Using bi-linearity of the pairing:
  \[=e(\pi_A,\enc2{\alpha_A})\cdot e\left(\sum_{i=1}^n (x_i-x'_i) \pk_{A,i},\enc2{\alpha_A}\right)\]
   \[=e\left(\pi_A+\sum_{i=1}^n (x_i-x'_i) \pk_{A,i},\enc2{\alpha_A}\right) = e(\eta_A,\enc2{\alpha_A}).\]
   \item The second and third checks involve the unchanged $\pi_B,\pi'_B,\pi_C,\pi'_C$
-  and thus pass since \prf was accepting.
+  and thus pass since \prf was valid.
   \item The fourth and fifth equations are also identical in \prf and $\prf^*$.
   The only difference is that the later replaces the term $\PI(x) + \pi_A$ 
   with $\PI(x')+ \eta_A$. And 
@@ -383,7 +383,7 @@ with two modifications:
     \item The polynomials \sett{A_i}{i\in [0..n]} are linearly independent (this condition already appears in \cite{BCTV} at \cite{Parno15}'s suggestion).
     \item $\span{\sett{A_i}{i\in[0..n]}}\cap \span{\sett{A_i}{i\in [n+1..m]}}=\set{0}$. \footnote{In conversation with Alessandro Chiesa and Madars Virza, we  learned that they were aware of the necessity of this condition, and it is satisfied by any QAP constructed in libsnark\cite{libsnark}. It also already appears in \cite{BGG}.}
    \end{enumerate}
-
+ \item We also assume, mainly as a convenience, that $Z\in \sett{C_i}{i\in [n+1..m]}$. This is always the case if we want zero-knowledge, and the \bctv construction adds $Z$ to $\set{A_i},\set{B_i},\set{C_i}$.
 \end{itemize}
 
 We show \bctvprime is knowledge sound in the generic group model.
@@ -409,7 +409,7 @@ Then $(x_0,\ldots,x_n) = (a_0,\ldots,a_n)$.
 
 
 We proceed to prove knowledge soundness of \bctvprime in the generic group model.
-Following \cite{groth16} (see also Section 2 of \cite{segroth} for formal details), it suffices to show knowledge
+Following \cite{groth16} (see also Section 2 of \cite{BG18} for formal details), it suffices to show knowledge
 soundness of \bctvprime as a Non-Interactive Linear Proof (NILP). That is, 
 \begin{itemize}
 \item The CRS elements and proof elements are the field elements originally encoded in the group elements, rather than the group elements.
@@ -418,8 +418,7 @@ $\tau,\rho_A,\rho_B,\alpha_A,\alpha_B,\alpha_C,\gamma,\beta$ as formal variables
 \item To prove knowledge soundness, it then suffices to efficiently derive from the coefficients of these linear combinations a QAP witness for $x$.
 \end{itemize}
 
-Suppose the adversary has output such a set of coefficients.
-Our NILP CRS is now the set of \emph{field elements}
+For \bctvprime, the NILP CRS is now the set of \emph{field elements}
 
 \begin{enumerate}
  \item For $i\in [0..d]$, $\tau^i$.
@@ -443,14 +442,19 @@ and our verification equations are now:
  \item $\pi'_A= \alpha_A\cdot \pi_A$.
 \item $\pi'_B=\alpha_B\cdot \pi_B$.
 \item $\pi'_C=\alpha_C\cdot \pi_C$.
-\item $\beta\gamma\cdot \pi_K =\gamma\cdot (\PI(x)+\pi_A+\pi_B+\pi_C)$.
+\item $\gamma\cdot \pi_K =\beta\gamma\cdot (\PI(x)+\pi_A+\pi_B+\pi_C)$.
 \item $(\PI(x)+\pi_A)\cdot \pi_B= \pi_C + \pi_H\cdot Z(\tau)\rho_A\rho_B$,
  \end{enumerate}
 where
 \[\PI(x)\defeq \rho_A A_0(\tau) + \sum_{i=1}^n x_i\cdot \rho_A A_i(\tau) .\]
  
+Suppose now a prover has indeed output a valid proof $\prf = (\pi_A,\pi_B,\pi_C,\pi'_A,\pi'_B,\pi'_C,\pi_H,\pi_K)$
+as linear combinations of the CRS elements, such that the verifier equations hold as polynomial identities.
+We show how to derive a QAP witness for $x$ from the coefficients of these linear combinations. 
+It will be convenient here to think of the proof elements as polynomials only in $\rho_A,\rho_B,\alpha_A,\alpha_B,\alpha_C,\beta,\gamma$ over the ring $\F[\tau]$; i.e. think of the coefficients of these polynomials (not to be confused with the coefficients of the linear combinations of CRS elements) as polynomials in $\tau$.
+ 
 
-The first equation implies that $\pi'_A$ only has non-zero coefficients for elements with an $\alpha_A$ component, i.e.
+The first equation implies that the linear combination for $\pi'_A$ only has non-zero coefficients for elements with an $\alpha_A$ component, i.e.
 \[\pi'_A = \sum_{i=n+1}^m a_i\cdot  \alpha_A\rho_A A_i(\tau) + a^*\cdot \alpha_A \]
 for some $a_{n+1},\ldots,a_m,a^* \in \F$.
 Which implies 
@@ -459,30 +463,39 @@ From the second and third checks, we can similarly conclude:
 \[\pi_B = \sum_{i=0}^m b_i\cdot  \rho_B B_i(\tau) + b^*\]
 
 \[\pi_C = \sum_{i=0}^m c_i \cdot \rho_A\rho_B C_i(\tau) + c^*\]
-
 Similarly, the fourth equation tells us that $\pi_K$ must only use with non-zero coefficient elements with a $\beta$ factor,
-i.e. the elements $\set{\gamma\beta,\sett{\beta(\rho_A A_i(\tau) + \rho_B B_i(\tau) + \rho_A\rho_B C_i(\tau))}{i\in[0..m}}$.
+i.e. the elements $\set{\gamma\beta,\sett{\beta(\rho_A A_i(\tau) + \rho_B B_i(\tau) + \rho_A\rho_B C_i(\tau))}{i\in[0..m]}}$.
 Hence we can write
 \[\pi_K = \sum_{i=0}^m k_i\cdot\beta(\rho_A A_i(\tau) + \rho_B B_i(\tau) + \rho_A\rho_B C_i(\tau)) + k^*\cdot \gamma\beta\]
-and therefore
-\[\PI(x)+\pi_A +\pi_B+\pi_C= \sum_{i=0}^m k_i\cdot(\rho_A A_i(\tau) + \rho_B B_i(\tau) + \rho_A\rho_B C_i(\tau)) + k^*\cdot \gamma\]
-Therefore
-\[\sum_{i=0}^m a_i \rho_A A_i(\tau) = \sum_{i=0}^m k_i\rho_A A_i(\tau),\]
-and
-\[\sum_{i=0}^m a_i A_i(\tau) = \sum_{i=0}^m k_i A_i(\tau).\]
 
-Invoking Claim \ref{clm:independence}, this implies $k_i=a_i$ for $i\in[0..n]$.
+and therefore
+\begin{equation}\label{eqn:pik}
+\PI(x)+\pi_A +\pi_B+\pi_C= \sum_{i=0}^m k_i\cdot(\rho_A A_i(\tau) + \rho_B B_i(\tau) + \rho_A\rho_B C_i(\tau)) + k^*\cdot \gamma.
+\end{equation}
+
+Looking at the $\rho_A$ coefficient on both sides of (\ref{eqn:pik}), we have
+\[\sum_{i=0}^n x_i \cdot \rho_A A_i(\tau)+\sum_{i=n+1}^m a_i \cdot \rho_A A_i(\tau) = \sum_{i=0}^m k_i\cdot \rho_A A_i(\tau),\]
+and so
+\[\sum_{i=0}^n x_i \cdot A_i(\tau)+\sum_{i=n+1}^m a_i \cdot A_i(\tau) = \sum_{i=0}^m k_i \cdot A_i(\tau).\]
+
+Invoking Claim \ref{clm:independence}, this implies $k_i=x_i$ for $i\in[0..n]$.
 Since the coefficients of $\rho_B,\rho_A\rho_B$ must also match, we have
-\[\sum_{i=0}^m b_i \rho_B B_i(\tau)= \sum_{i=0}^m k_i \rho_B B_i(\tau),\sum_{i=0}^m c_i \rho_A\rho_B C_i(\tau)=\sum_{i=0}^m k_i \rho_A\rho_B C_i(\tau) \]
+\[\sum_{i=0}^m b_i\cdot  \rho_B B_i(\tau)= \sum_{i=0}^m k_i \cdot \rho_B B_i(\tau),\sum_{i=0}^m c_i \cdot \rho_A\rho_B C_i(\tau)=\sum_{i=0}^m k_i \cdot\rho_A\rho_B C_i(\tau) \]
 So
-\[\pi_A=\sum_{i=0}^m k_i \rho_A A_i(\tau)+a^*,\pi_B=\sum_{i=0}^m k_i \rho_B B_i(\tau)+b^*,\pi_C=\sum_{i=0}^m k_i \rho_A\rho_B C_i(\tau)+c^*\]
+\[\PI(x)+\pi_A=\sum_{i=0}^m k_i\cdot \rho_A A_i(\tau)+a^*,\pi_B=\sum_{i=0}^m k_i \cdot \rho_B B_i(\tau)+b^*,\pi_C=\sum_{i=0}^m k_i \cdot \rho_A\rho_B C_i(\tau)+c^*\]
 
 
 Now invoking the fifth equation we have
-\[(\PI(x)+\pi_A)\cdot \pi_B= \pi_C + \pi_H\cdot Z(\tau)\rho_A\rho_B\]
-The $\rho_A\rho_B$ coefficient of each side must be equal, giving
-\[(\sum_{i=0}^m k_i A_i(\tau))(\sum_{i=0}^m k_i B_i(\tau)) = \sum_{i=0}^m C_i(\tau) + H(\tau)Z(\tau)\]
-Since $k_i=x_i$ for $i\in [0..n]$ this means $k_0,\ldots,k_n$ is a QAP solution for public input $x$.
+\begin{equation}\label{eqn:pih}
+(\PI(x)+\pi_A)\cdot \pi_B= \pi_C + \pi_H\cdot Z(\tau)\rho_A\rho_B. 
+\end{equation}
+
+
+Denote by $H(\tau)$ the degree at most $d$ polynomial which is the part of $\pi_H$ involving the terms
+\sett{\tau_i}{i\in [0..d]} (inspection shows in fact $\pi_H=H(\tau)$, but this is not crucial for us).
+The $\rho_A\rho_B$ coefficient of each side in (\ref{eqn:pih}), giving
+\[\left(\sum_{i=0}^m k_i \cdot A_i(\tau)\right)\left(\sum_{i=0}^m k_i\cdot  B_i(\tau)\right) = \sum_{i=0}^m k_i\cdot C_i(\tau) + H(\tau)Z(\tau)\]
+Since $k_i=x_i$ for $i\in [0..n]$, this means $k_{n+1},\ldots,k_m$ is a QAP witness for public input $x$.
 
 \section*{Acknowledgements}
 We thank Sean Bowe for useful discussions.
