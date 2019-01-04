@@ -113,10 +113,10 @@
 \fi
 \providecommand{\improvement}[1]{{\color{red} \textbf{#1}}}
 \title{%
-On the security of the BCTV Pinocchio zk-SNARK variant}
+On the security of the BCTV Pinocchio zk-SNARK Variant}
 \date{\today}
 \author{Ariel Gabizon}
-\date{Zcash }
+\date{Zcash Company}
 \begin{document}
 \maketitle
  \mathchardef\mhyphen="2D
@@ -219,26 +219,28 @@ On the security of the BCTV Pinocchio zk-SNARK variant}
 \newcommand{\PI}{\ensuremath{\mathsf{PI}}\xspace}
 \newcommand{\dl}[1]{\ensuremath{\widehat{#1}}\xspace}
 \begin{abstract}
+
 The main result of this note is a severe flaw in the description of the zk-SNARK in \cite{BCTV}.
-The flaw stems from including redundant elements in the CRS as compared to that of the original Pinocchio protocol \cite{PGHR} that it is vital not to expose.
-The flaw enables creating a proof of knowledge for *any* public input given a valid proof for *some* public input.
+The flaw stems from including redundant elements in the CRS, as compared to that of the original Pinocchio protocol \cite{PGHR}, which are vital not to expose.
+The flaw enables creating a proof of knowledge for \emph{any} public input given a valid proof for \emph{some} public input.
 We also provide a proof of security for the \cite{BCTV} zk-SNARK in the generic group model, when these elements are excluded from the CRS, provided a certain linear algebraic condition is satisfied by the QAP polynomials.
 \end{abstract}
 
 \section{Introduction}
 
 Parno et. al \cite{PGHR} presented a zk-SNARK construction based on the breakthrough work of \cite{GGPR} that they called Pinocchio.
-Ben-Sasson et. al \cite{BCTV} presented a variant of Pinocchio with the advantage of shorter verification time and verification key length, at the expense of an arguably negligible increase in proving time. However, \cite{BCTV} did not present a security proof for this variant, and in fact Parno \cite{Parno15} found an attack against the \cite{BCTV} SNARK and suggested to mitigate it by imposing a certain linear independence condition on some of the public instance polynomials - which \cite{BCTV} did in a revised version of the paper and corresponding implementation \cite{libsnark}. In this note, we show a more severe attack on \cite{BCTV} that takes advantage of redundant elements in the proving key that should have been omitted.
+Ben-Sasson et. al \cite{BCTV} presented a variant of Pinocchio with the advantage of shorter verification time and verification key length, at the expense of an arguably negligible increase in proving time. However, \cite{BCTV} did not present a security proof for this variant, and in fact Parno \cite{Parno15} found an attack against the \cite{BCTV} SNARK and suggested to mitigate it by imposing a certain linear independence condition on some of the public instance polynomials -- which \cite{BCTV} did in a revised version of the paper and corresponding implementation \cite{libsnark}. In this note, we show a more severe attack on \cite{BCTV} that takes advantage of redundant elements in the proving key that should have been omitted.
 
 
 \subsection{Impacted work}
-\cite{BGG} gave for the first time a proof of security for \cite{BCTV}. However, the proof has an error and in fact we discovered the attack while going over it.
-Any paper that cites the \cite{BCTV} construction as is inherits the flaw; the ones we found are \cite{Adsnark,Fuchsbauer18}.
-% 
-% Fortunately, the libsnark implementation\cite{libsnark} of \cite{BCTV}, perhaps as a result of following the prover algorithm more than the key generation algorithm, ends up generating parameters that do not contain the redundant elements that enable the attack;
-% thus someone generating parameters using the libsnark key generation algorithm (e.g. in a designated verifier setting) is not vulnerable to the attack. However, someone using parameters completely matching the \cite{BCTV} paper, e.g. ones generated in the MPC described in \cite{BGG}, is.
+The first proof of security for \cite{BCTV} was given in \cite{BGG}. However, the proof has an error and in fact we discovered the attack while reviewing it.
+Other papers that leverage the \cite{BCTV} construction inherit the flaw also; the ones we found are \cite{Adsnark,Fuchsbauer18}. The flaw also appears in Parno's \cite{Parno15} analysis of \cite{BCTV} which had identified a separate knowledge soundness flaw in the construction.
 
+The (\texttt{libsnark} ~\cite{libsnark}) implementation of the \cite{BCTV} prover distributed alongside the paper expects that the elements of concern are removed from the CRS, apparently intended as one of several optimizations that deviated from the construction as described in the paper. (The elements are not used by the prover.) As a result, parameters constructed by \texttt{libsnark} are not vulnerable to this specific attack.
 
+However, the multi-party computation \cite{BGG} follows the construction described in \cite{BCTV} closely and so the elements are produced during the protocol's execution, though they do not appear in the final parameters in order to be compatible with the \texttt{libsnark} prover. Unfortunately, the transcript of the protocol's execution must be distributed so that the resulting parameters can be verified, and so the elements are revealed.
+
+We also discovered an independent implementation of \cite{BCTV} which appears to inherit the flaw~\cite{snarkjs}, as unlike \texttt{libsnark} its key generation and proving routines match the paper closely.
 
 \subsection{Notation}
 We will be working over bilinear groups $\G1$, $\G2$, and $\Gt$ each of prime order $p$, together with respective generators $g_1$, $g_2$ and $g_T$.
@@ -314,10 +316,10 @@ Denote the ``public input component''
 \item $e(\PI(x)+\pi_A,\pi_B)= e(\pi_C,g_2)\cdot e(\pi_H,\enc2{Z(\tau)\rho_A\rho_B})$.
  \end{enumerate}
  
- \section{The attack}\label{sec:attack}
- Note that the elements \sett{\pk'_{A,i}}{i\in [0..n]} are not used at all by the verifier and honest prover, and thus could have been omitted from the key. We show here these elements allow to replace the public input arbitrarily when starting from a valid proof.
+ \section{Attack Description}\label{sec:attack}
+ Note that the elements \sett{\pk'_{A,i}}{i\in [0..n]} are not used at all by the verifier and honest prover, and thus could have been omitted from the key. We show that these elements allow a malicious prover to replace the public input arbitrarily when starting from a valid proof.
  Loosely speaking, we do this by adding a factor to $\pi_A$ that ``switches'' the public input the proof is arguing about.
- The first verifier check - the ``knowledge check'' for $\pi_A$, should catch us; but the redundant elements allow us to add
+ The first verifier check -- the ``knowledge check'' for $\pi_A$ -- should catch this, but the redundant elements allow the malicious prover to add
  the analogous factor to $\pi'_A$ and pass the check. Details follow.
  
  
@@ -373,7 +375,7 @@ Using bi-linearity of the pairing:
  
  \renewcommand{\span}[1]{\ensuremath{\mathrm{Span}_{\F}(#1)}\xspace}
  \newcommand{\bctvprime}{\ensuremath{\bctv'}\xspace}
-\section{Security proof in the generic group model}\label{sec:ggmproof}
+\section{Security Proof in the Generic Group Model}\label{sec:ggmproof}
 Let us denote by \bctvprime the scheme identical to the one in \cite{BCTV} described in Subsection \ref{subsec:bctv},
 with two modifications:
 \begin{itemize}
