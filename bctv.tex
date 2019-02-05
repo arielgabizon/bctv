@@ -95,7 +95,6 @@
 \newcommand{\zom}{{\zo^m}}
 \newcommand{\zok}{{\zo^}}
 \newcommand{\eps}{\epsilon}
-\newcommand{\e}{\eps}
 %\newcommand{\d}{\delta}
 \newcommand{\poly}{{\rm{poly}}}
 \newcommand{\itone}{{\it{(i)}}\xspace}
@@ -113,10 +112,10 @@
 \fi
 \providecommand{\improvement}[1]{{\color{red} \textbf{#1}}}
 \title{%
-On the security of the BCTV Pinocchio zk-SNARK Variant}
+On the security of the BCTV Pinocchio zk-SNARK variant}
 \date{\today}
-\author{Ariel Gabizon}
-\date{Zcash Company}
+\author{Ariel Gabizon\thanks{This work was done while the author was working at the Zcash Company.}}
+
 \begin{document}
 \maketitle
  \mathchardef\mhyphen="2D
@@ -229,18 +228,20 @@ We also provide a proof of security for the \cite{BCTV} zk-SNARK in the generic 
 \section{Introduction}
 
 Parno et. al \cite{PGHR} presented a zk-SNARK construction based on the breakthrough work of \cite{GGPR} that they called Pinocchio.
-Ben-Sasson et. al \cite{BCTV} presented a variant of Pinocchio with the advantage of shorter verification time and verification key length, at the expense of an arguably negligible increase in proving time. However, \cite{BCTV} did not present a security proof for this variant, and in fact Parno \cite{Parno15} found an attack against the \cite{BCTV} SNARK and suggested to mitigate it by imposing a certain linear independence condition on some of the public instance polynomials -- which \cite{BCTV} did in a revised version of the paper and corresponding implementation \cite{libsnark}. In this note, we show a more severe attack on \cite{BCTV} that takes advantage of redundant elements in the proving key that should have been omitted.
+Ben-Sasson et. al \cite{BCTV} presented a variant of Pinocchio with the advantage of shorter verification time and verification key length, at the expense of an arguably negligible increase in prover running time. However, \cite{BCTV} did not present a security proof for this variant, and in fact Parno \cite{Parno15} found an attack against the \cite{BCTV} SNARK and suggested to mitigate it by imposing a certain linear independence condition on some of the public input polynomials -- which \cite{BCTV} did in a revised version of the paper and corresponding implementation \cite{libsnark}. In this note, we show a more severe attack on \cite{BCTV} that takes advantage of redundant elements in the proving key that should have been omitted.
 
 
 \subsection{Impacted work}
 The first proof of security for \cite{BCTV} was given in \cite{BGG}. However, the proof has an error and in fact we discovered the attack while reviewing it.
-Other papers that leverage the \cite{BCTV} construction inherit the flaw also; the ones we found are \cite{Adsnark,Fuchsbauer18}. The flaw also appears in Parno's \cite{Parno15} analysis of \cite{BCTV} which had identified a separate knowledge soundness flaw in the construction.
+Other papers that leverage the \cite{BCTV} construction inherit the flaw also; the ones we found are \cite{Adsnark,Fuchsbauer18}.
 
-The (\texttt{libsnark} ~\cite{libsnark}) implementation of the \cite{BCTV} prover distributed alongside the paper expects that the elements of concern are removed from the CRS, apparently intended as one of several optimizations that deviated from the construction as described in the paper. (The elements are not used by the prover.) As a result, parameters constructed by \texttt{libsnark} are not vulnerable to this specific attack.
+The (\texttt{libsnark} ~\cite{libsnark}) implementation of the \cite{BCTV} prover distributed alongside the paper expects that the elements of concern are removed from the CRS, apparently intended as one of several optimizations that deviated from the construction as described in the paper. (The elements are not used by the prover.) As a result, parameters constructed directly by \texttt{libsnark} are not vulnerable to this specific attack.
 
-However, the multi-party computation \cite{BGG} follows the construction described in \cite{BCTV} closely and so the elements are produced during the protocol's execution, though they do not appear in the final parameters in order to be compatible with the \texttt{libsnark} prover. Unfortunately, the transcript of the protocol's execution must be distributed so that the resulting parameters can be verified, and so the elements are revealed.
+However, the multi-party computation of \cite{BGG} follows the construction described in \cite{BCTV} closely and so the elements are produced during the protocol's execution, though they do not appear in the final parameters in order to be compatible with the \texttt{libsnark} prover. Unfortunately, the transcript of the protocol's execution must be distributed so that the resulting parameters can be verified, and so the elements are revealed.
 
 We also discovered an independent implementation of \cite{BCTV} which appears to inherit the flaw~\cite{snarkjs}, as unlike \texttt{libsnark} its key generation and proving routines match the paper closely.
+
+Lastly, we emphasize that the mitigation of Parno~\cite{Parno15} for the attack presented there, does not mitigate the attack presented here.
 
 \subsection{Notation}
 We will be working over bilinear groups $\G1$, $\G2$, and $\Gt$ each of prime order $p$, together with respective generators $g_1$, $g_2$ and $g_T$.
@@ -255,7 +256,7 @@ For $a \in \F$, we denote $\enc1{a}\defeq a\cdot g_1, \enc2{a}\defeq a\cdot g_2$
 \subsection{Description of \cite{BCTV} SNARK}\label{subsec:bctv}
 
 We recall the zk-SNARK of \cite{BCTV} as described in that paper.
-We assume familiary of quadratic arithmetic programs.
+We assume familiarity with quadratic arithmetic programs.
 See e.g., Section 2.3 in \cite{groth16} for definitions.
 We use similar notation to \cite{BCTV}, denoting by $m$ the size of the QAP, $d$ the degree and $n$ the number of public inputs.
 More specifically, our QAP has the form \set{\sett{A_i(X),B_i(X),C_i(X)}{i\in [0..m]}, Z(X)}
@@ -288,7 +289,7 @@ $g_1\in \G1,g_2\in \G2$, and these are all public.
 
 \newcommand{\Amid}{\ensuremath{A_{\mathrm{mid}}}\xspace}
 \paragraph{\underline{\bctv prover:}\\}
-The prover has in his hand a QAP solution $(x_0=1,x_1,\ldots,x_m)$ that coincides with the public input $x=(x_1,\ldots,x_n)$ and satisfies the following:
+The prover \per has in his hand a QAP solution $(x_0=1,x_1,\ldots,x_m)$ that coincides with the public input $x=(x_1,\ldots,x_n)$ and satisfies the following:
 If we define $A\defeq \sum_{i=0}^m x_i\cdot A_i, B\defeq \sum_{i=0}^m x_i \cdot B_i,$ and $C\defeq \sum_{i=0}^m x_i \cdot C_i$;
 then the polynomial $P\defeq A\cdot B - C$ will be divisble by the target polynomial $Z$, and \per can compute the polynomial $H$ of degree at most $d$ with $P=H\cdot Z$. Let $\Amid\defeq A -\sum_{i=0}^n x_i\cdot A_i$.
 
@@ -298,7 +299,7 @@ Given the proving key, \per computes as linear combinations of the proving key e
 \item $\pi_B\defeq \enc2{\rho_B B(\tau)}$, $\pi'_B \defeq \enc1{\alpha_B\rho_B B(\tau)}$.
 \item $\pi_C\defeq \enc1{\rho_A\rho_B C(\tau)}$, $\pi'_C \defeq \enc1{\alpha_C\rho_A\rho_B C(\tau)}$.
 \item $\pi_K\defeq \enc1{\beta(\rho_A A(\tau) + \rho_B B(\tau) + \rho_A\rho_B C(\tau))}$.
-\item $\pi_H\defeq \enc1{H(\tau}$.
+\item $\pi_H\defeq \enc1{H(\tau)}$.
  \end{enumerate}
  and outputs $\prf = (\pi_A,\pi_B,\pi_C,\pi'_A,\pi'_B,\pi'_C,\pi_H,\pi_K)$,
  
@@ -353,7 +354,7 @@ Denote the ``public input component''
   We have
   \[\eta'_A = \pi'_A + \sum_{i=1}^n (x_i-x'_i) \pk'_{A,i}\]
  So
- \[e(\eta'_A,g_2) = \e(\pi'_A,g_2)\cdot e\left(\sum_{i=1}^n (x_i-x'_i) \pk'_{A,i},g_2\right)\]
+ \[e(\eta'_A,g_2) = e(\pi'_A,g_2)\cdot e\left(\sum_{i=1}^n (x_i-x'_i) \pk'_{A,i},g_2\right)\]
  Since \prf is a valid proof, this is:
   \[=e(\pi_A,\enc2{\alpha_A})\cdot e\left(\sum_{i=1}^n (x_i-x'_i) \pk'_{A,i},g_2\right)\]
   Using $\pk'_{A,i} = \alpha_A\cdot \pk_{A,i}$ for every $i$,
@@ -364,7 +365,7 @@ Using bi-linearity of the pairing:
   \item The second and third checks involve the unchanged $\pi_B,\pi'_B,\pi_C,\pi'_C$
   and thus pass since \prf was valid.
   \item The fourth and fifth equations are also identical in \prf and $\prf^*$.
-  The only difference is that the later replaces the term $\PI(x) + \pi_A$ 
+  The only difference is that the latter replaces the term $\PI(x) + \pi_A$ 
   with $\PI(x')+ \eta_A$. And 
     \[\PI(x) + \pi_A = \pk_{A,0} + \sum_{i=1}^n x_i\pk_{A,i} + \pi_A = 
   \pk_{A,0} + \sum_{i=1}^n x'_i\pk_{A,i} +  \sum_{i=1}^n (x_i-x'_i) \pk_{A,i}  + \pi_A =
@@ -411,10 +412,9 @@ Then $(x_0,\ldots,x_n) = (a_0,\ldots,a_n)$.
 
 
 We proceed to prove knowledge soundness of \bctvprime in the generic group model.
-Following \cite{groth16} (see also Section 2 of \cite{BG18} for formal details), it suffices to show knowledge
-soundness of \bctvprime as a Non-Interactive Linear Proof (NILP). That is, 
+Following \cite{groth16} (see also Section 2 of \cite{BG18} for formal details, and \cite{BCIOP} for a more general treatment of this framework), it suffices to show knowledge soundness of \bctvprime as a Non-Interactive Linear Proof (NILP). That is, 
 \begin{itemize}
-\item The CRS elements and proof elements are the field elements originally encoded in the group elements, rather than the group elements.
+\item The CRS elements are the field elements encoded in the SNARK CRS group elements, rather than the group elements.
 \item The malicious prover must output, given only the public input $x\in\F^n$, $\prf = (\pi_A,\pi_B,\pi_C,\pi'_A,\pi'_B,\pi'_C,\pi_H,\pi_K)$ as linear combinations of the CRS elements, such that the verifier equations hold as a polynomial identity in 
 $\tau,\rho_A,\rho_B,\alpha_A,\alpha_B,\alpha_C,\gamma,\beta$ as formal variables.
 \item To prove knowledge soundness, it then suffices to efficiently derive from the coefficients of these linear combinations a QAP witness for $x$.
@@ -494,13 +494,13 @@ Now invoking the fifth equation we have
 
 
 Denote by $H(\tau)$ the degree at most $d$ polynomial which is the part of $\pi_H$ involving the terms
-\sett{\tau_i}{i\in [0..d]} (inspection shows in fact $\pi_H=H(\tau)$, but this is not crucial for us).
+\sett{\tau^i}{i\in [0..d]} (inspection shows in fact $\pi_H=H(\tau)$, but this is not crucial for us).
 The $\rho_A\rho_B$ coefficient of each side in (\ref{eqn:pih}), giving
 \[\left(\sum_{i=0}^m k_i \cdot A_i(\tau)\right)\left(\sum_{i=0}^m k_i\cdot  B_i(\tau)\right) = \sum_{i=0}^m k_i\cdot C_i(\tau) + H(\tau)Z(\tau)\]
 Since $k_i=x_i$ for $i\in [0..n]$, this means $k_{n+1},\ldots,k_m$ is a QAP witness for public input $x$.
 
 \section*{Acknowledgements}
-We thank Sean Bowe for useful discussions.
+We thank Sean Bowe and Alessandro Chiesa for useful discussions and a review of this note.
 \bibliographystyle{alpha}
 \bibliography{References}
 
